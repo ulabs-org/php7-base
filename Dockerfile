@@ -58,7 +58,7 @@ RUN set -xe; \
 	\
 	apk add --no-cache --virtual .fetch-deps \
 		gnupg \
-		openssl \
+		libressl \
 	; \
 	\
 	mkdir -p /usr/src; \
