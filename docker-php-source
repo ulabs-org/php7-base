@@ -9,14 +9,67 @@ usage() {
 	echo "Manage php source tarball lifecycle."
 	echo
 	echo "Commands:"
+	echo "   cleanup  delete php source tarball and extracted php source."
+	echo "   download download php source tarball if not already done."
 	echo "   extract  extract php source tarball into directory $dir if not already done."
 	echo "   delete   delete extracted php source located into $dir if not already done."
 	echo
 }
 
+get_source() {
+	set -xe; \
+	\
+	apk add --no-cache --virtual .fetch-deps \
+		gnupg \
+		libressl \
+	; \
+	\
+	mkdir -p /usr/src; \
+	cd /usr/src; \
+	\
+	wget -O php.tar.xz "$PHP_URL"; \
+	\
+	if [ -n "$PHP_SHA256" ]; then \
+		echo "$PHP_SHA256 *php.tar.xz" | sha256sum -c -; \
+	fi; \
+	if [ -n "$PHP_MD5" ]; then \
+		echo "$PHP_MD5 *php.tar.xz" | md5sum -c -; \
+	fi; \
+	\
+	if [ -n "$PHP_ASC_URL" ]; then \
+		wget -O php.tar.xz.asc "$PHP_ASC_URL"; \
+		export GNUPGHOME="$(mktemp -d)"; \
+		for key in $GPG_KEYS; do \
+			gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
+		done; \
+		gpg --batch --verify php.tar.xz.asc php.tar.xz; \
+		rm -r "$GNUPGHOME"; \
+	fi; \
+	\
+	apk del .fetch-deps
+}
+
 case "$1" in
+	download)
+		mkdir -p "$dir"
+		if [ ! -f "/usr/src/php.tar.xz" ]; then
+			get_source
+		fi
+		exit 1
+		;;
+
+	cleanup)
+		if [ -f "/usr/src/php.tar.xz" ]; then
+			rm /usr/src/php.tar.xz
+		fi
+		rm -rf "$dir"
+		;; 
+
 	extract)
 		mkdir -p "$dir"
+		if [ ! -f "/usr/src/php.tar.xz" ]; then
+			get_source
+		fi
 		if [ ! -f "$dir/.docker-extracted" ]; then
 			tar -Jxf /usr/src/php.tar.xz -C "$dir" --strip-components=1
 			touch "$dir/.docker-extracted"
