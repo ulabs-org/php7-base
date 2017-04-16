@@ -5,7 +5,7 @@
 This docker image based on [Alpine](https://hub.docker.com/_/alpine/) ( [Alpine Linux](http://www.alpinelinux.org) - 
 lightweight Linux distribution).
 
-The size of this docker image is very small, ≈ 56Mb!
+The size of this docker image is very small, ≈ 56Mb (18MB compressed size)!
 
 ## How get The Image
 
